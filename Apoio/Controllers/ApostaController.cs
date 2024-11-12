@@ -57,7 +57,90 @@ namespace Apoio.Controllers
             {
                 return NotFound();
             }
+            ViewData["ApostadorId"] = new SelectList(_context.Apostadores, "Id", "Nome");
             return View(aposta);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Valor,PrevisaoDeGanho,Vencedora, ApostadorId")] Aposta aposta)
+        {
+            if (id != aposta.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(aposta);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!ApostaExists(aposta.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(aposta);
+        }
+        private bool ApostaExists(int id)
+        {
+            return _context.Apostas.Any(e => e.Id == id);
+        }
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var aposta = await _context.Apostas
+                .Include(m => m.Apostador)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (aposta == null)
+            {
+                return NotFound();
+            }
+
+            return View(aposta);
+        }
+
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var aposta = await _context.Apostas
+                .Include(m => m.Apostador)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (aposta == null)
+            {
+                return NotFound();
+            }
+
+            return View(aposta);
+        }
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var aposta = await _context.Apostas.FindAsync(id);
+            if (aposta != null)
+            {
+                _context.Apostas.Remove(aposta);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
     }
